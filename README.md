@@ -1,6 +1,57 @@
 # Poker Hand Console App (Java 17)
 Java 17 と Maven を使って 5 枚のカードからポーカー役を判定するコンソールアプリです。GitHub Codespaces 上での起動からビルド・テスト・実行までを迷わず再現できる手順をまとめています。
 
+## Quickstart (GitHub Codespaces)
+
+このプロジェクトは Java 17 / Maven を使用します。Codespaces 既定イメージには SDKMAN! が含まれます。
+
+```bash
+# バージョン確認
+java -version
+mvn -v
+
+# 必要なら（初回のみ）
+sdk env install || true
+sdk env || true
+```
+
+### Build
+
+```bash
+mvn -q clean package -DskipTests
+mvn -q test
+```
+
+### Run (標準入力で5枚を1行)
+
+```bash
+printf "AS KS QS JS TS\n" | mvn -q -DskipTests exec:java
+```
+
+### Run (コマンド引数で5枚)
+
+```bash
+mvn -q -DskipTests exec:java -Dexec.args="AS KS QS JS TS"
+```
+
+### 代表的な例
+
+```bash
+# Straight Flush
+printf "AS KS QS JS TS\n" | mvn -q -DskipTests exec:java
+
+# Full House
+printf "2H 2D 2S 9C 9D\n" | mvn -q -DskipTests exec:java
+
+# 引数版
+mvn -q -DskipTests exec:java -Dexec.args="2H 2D 2S 9C 9D"
+```
+
+### Troubleshooting
+
+* `ClassNotFoundException` の場合：パッケージとクラス名が `poker.PokerHandApp` であることを確認。
+* `release version 17 not supported` の場合：`java -version` が 17 になっているか確認。`.sdkmanrc` を作成済みなら `sdk env` を実行。
+
 ## Open in GitHub Codespaces
 リポジトリをフォーク済みならクリックで起動 → 下記の `OWNER/REPO` は自分のリポジトリ名に置き換えてください。
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/OWNER/REPO?quickstart=1)
