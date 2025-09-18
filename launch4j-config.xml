@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch4jConfig>
+  <dontWrapJar>false</dontWrapJar>
+  <headerType>console</headerType>
+  <outfile>dist\PokerHandApp.exe</outfile>
+  <jar>target\poker-hand-app-1.0-SNAPSHOT.jar</jar>
+  <errTitle>Poker Hand App</errTitle>
+  <cmdLine></cmdLine>
+  <chdir>.</chdir>
+  <priority>normal</priority>
+  <downloadUrl>https://adoptium.net/</downloadUrl>
+  <supportUrl>https://github.com/OWNER/REPO</supportUrl>
+  <stayAlive>false</stayAlive>
+  <manifest></manifest>
+  <icon></icon>
+  <classPath>
+    <mainClass>poker.PokerHandApp</mainClass>
+  </classPath>
+  <jre>
+    <path></path>
+    <minVersion>17</minVersion>
+    <maxVersion></maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+    <runtimeBits>64/32</runtimeBits>
+  </jre>
+</launch4jConfig>
