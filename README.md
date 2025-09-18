@@ -205,88 +205,115 @@ mvn -q test
 
 ## Windows で exe ファイルを作る手順
 
-Launch4j を使って本プロジェクトを Windows ネイティブ実行形式（`.exe`）に変換する手順です。既存の Maven ビルド成果物（JAR）をラッパーで包む形になるため、アプリ本体のコード変更は不要です。
+Launch4j を使って Maven ビルド済み JAR を Windows の実行形式（`.exe`）にラップする手順です。相対パスのみを使用し、個人情報やローカル固有のディレクトリを記載しないようにしています。
 
 ### 前提条件
 
-以下のソフトウェアを Windows マシンにインストールし、環境変数から利用できるようにしておきます。
+Windows 上で以下のツールを用意します。入手経路は任意ですが、一般的な方法として Adoptium から JDK を取得したり、Scoop (`scoop install launch4j`) を利用する例があります。
 
-- **Java 17 JDK**: `java -version` で 17 系が表示されること。
-- **Git**: プロジェクトの取得に使用します。
-- **Apache Maven 3.x**: JAR をビルドするために使用します。
-- **Launch4j**: JAR を exe にラップするツール。公式配布の zip を任意のフォルダ（例: `C:\tools\launch4j`）へ展開します。
+- **Java 17 JDK**（`java -version` で 17 系が利用可能）
+- **Apache Maven 3.x**
+- **Launch4j 3.50 以降**（GUI 版/CLI 版どちらでも可）
 
-### プロジェクト取得とビルド
+### ビルド（JAR 作成）
 
-PowerShell を管理者権限なしで開き、作業ディレクトリを用意してからリポジトリを取得・ビルドします。
+プロジェクト直下で Maven を実行し、JAR を生成します。
 
 ```powershell
-# 任意の作業ディレクトリへ移動
-Set-Location $env:USERPROFILE\source
-
-# リポジトリを取得（必要に応じて URL を変更）
-git clone https://github.com/OWNER/poker.git
-Set-Location .\poker
-
-# 依存関係を解決し、JAR を生成
 mvn -q clean package
 ```
 
-ビルドに成功すると `target\poker-hand-app-1.0-SNAPSHOT.jar` が生成されます。以降の Launch4j 設定ではこのパスを参照します。
+成功すると `target\poker-hand-app-1.0-SNAPSHOT.jar` が作成されます。以降の手順では相対パスでこの成果物を参照します。
 
-### Launch4j 設定ファイルの作成
+### Launch4j で exe を生成
 
-Launch4j は GUI でも CLI でも設定可能ですが、自動化しやすい XML 設定ファイルを作るのがおすすめです。例として `launch4j-config.xml` をプロジェクト直下に作成します。
+`launch4jc.exe launch4j-config.xml`
+
+Launch4j の設定は `launch4j-config.xml` に保存しています。コンソールヘッダー・相対パス・`poker.PokerHandApp` をメインクラスとして設定しているため、Launch4j 3.50 系でもそのまま実行できます。
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <launch4jConfig>
   <dontWrapJar>false</dontWrapJar>
-  <headerType>gui</headerType>
-  <outfile>${PROJECT_DIR}\dist\PokerHandApp.exe</outfile>
-  <jar>${PROJECT_DIR}\target\poker-hand-app-1.0-SNAPSHOT.jar</jar>
+  <headerType>console</headerType>
+  <outfile>dist\PokerHandApp.exe</outfile>
+  <jar>target\poker-hand-app-1.0-SNAPSHOT.jar</jar>
   <errTitle>Poker Hand App</errTitle>
   <cmdLine></cmdLine>
   <chdir>.</chdir>
   <priority>normal</priority>
   <downloadUrl>https://adoptium.net/</downloadUrl>
-  <supportUrl>https://github.com/OWNER/poker</supportUrl>
+  <supportUrl>https://github.com/OWNER/REPO</supportUrl>
   <stayAlive>false</stayAlive>
   <manifest></manifest>
   <icon></icon>
+  <classPath>
+    <mainClass>poker.PokerHandApp</mainClass>
+  </classPath>
   <jre>
     <path></path>
     <minVersion>17</minVersion>
     <maxVersion></maxVersion>
     <jdkPreference>preferJre</jdkPreference>
     <runtimeBits>64/32</runtimeBits>
-    <bundledJrePath></bundledJrePath>
   </jre>
 </launch4jConfig>
 ```
 
-- `${PROJECT_DIR}` はプロジェクトの絶対パス（例: `C:\Users\you\source\poker`）に読み替えてください。
-- `<headerType>` を `gui` にすることでコンソールを開かずに実行できます（必要なら `console` に変更してください）。
-- `<runtimeBits>` を `64/32` にすると 64bit/32bit どちらの JRE でも起動する exe が作成されます。
-- `<icon>` に `.ico` ファイルのパスを指定するとアプリ固有のアイコンを付与できます。
+- `<headerType>console</headerType>`：ログや例外を標準出力で確認できます。GUI 版に切り替える場合は `gui` を指定します。
+- `<classPath><mainClass>poker.PokerHandApp</mainClass></classPath>`：メインクラスを明示し、JAR のマニフェストに `Main-Class` が無くても実行できます。
+- `<bundledJrePath>` は 3.50 系で非推奨のため含めていません。配布時に同梱 JRE が必要な場合は Zip 展開や別途スクリプトを検討します。
 
-### Launch4j で exe を生成
+### 実行例
 
-作成した設定ファイルを Launch4j の CLI で処理します。以下では Launch4j を `C:\tools\launch4j` に展開した想定です。
+生成された exe は相対パスのまま実行できます。
 
 ```powershell
-# Launch4j ディレクトリへ移動
-Set-Location C:\tools\launch4j
-
-# 設定ファイルを指定して exe を生成
-.\launch4jc.exe C:\Users\you\source\poker\launch4j-config.xml
+.\dist\PokerHandApp.exe AS KS QS JS 10S
 ```
 
-`BUILD SUCCESSFUL` と表示され、設定した `dist\PokerHandApp.exe` が生成されれば成功です。`dist` フォルダが存在しない場合は事前に `New-Item -ItemType Directory dist` などで作成しておきます。
+標準入力からカードを渡す場合:
 
-### exe の起動
+```powershell
+echo "2H 2D 2S 9C 9D" | .\dist\PokerHandApp.exe
+```
 
-生成された `PokerHandApp.exe` をダブルクリックすると、JAR と同じポーカー役判定アプリが起動します（コンソール版として実行する設定の場合はターミナルが開きます）。配布時は同じディレクトリに必要な設定ファイルや README を同梱してください。
+ダブルクリックで起動したい場合は `scripts\windows\PokerHandApp-run.cmd` を利用してください。カードを入力すると判定結果を表示し、`pause` で一時停止します。
+
+### Troubleshooting
+
+- **「メイン・マニフェスト属性がありません」と表示される**：上記の `<classPath><mainClass>...</mainClass>` が設定されているか確認してください。JAR に直接書き込みたい場合は Maven の `maven-jar-plugin` で `Main-Class` を追加できます（例を後述）。
+- **Launch4j の Zip が壊れている**：公式配布サイトから再取得するか、`curl -L -O <URL>` のようにリトライします。
+
+### Maven で MANIFEST に Main-Class を焼く例（任意）
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-jar-plugin</artifactId>
+      <version>3.3.0</version>
+      <configuration>
+        <archive>
+          <manifest>
+            <mainClass>poker.PokerHandApp</mainClass>
+          </manifest>
+        </archive>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+```
+
+### セキュリティと配布時の注意
+
+- 署名付きの exe を用意すると、アンチウイルスによる誤検知を減らせます。
+- 配布物には SHA-256 などのハッシュ値を添付し、改ざん検知に備えます。
+
+### 代替案（任意）
+
+JDK 21 以降では `jpackage` コマンドを利用して exe や MSI を直接生成できます。Java ランタイムの同梱が必要な場合や GUI アプリに発展した際に検討してください。
 
 ## ライセンス / 著者
 - ライセンス情報が設定されている場合はリポジトリ直下の `LICENSE` ファイルを参照してください。未設定の場合はプロジェクト方針に合わせて追加してください。
