@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,12 +20,38 @@ public final class PokerHandApp {
 
     public static void main(String[] args) {
         PokerHandEvaluator evaluator = new PokerHandEvaluator();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-            String line = reader.readLine();
-            List<Card> cards = parseInput(line);
+        String line;
+        if (args != null && args.length >= 5) {
+            line = String.join(" ", args);
+        } else {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+                line = reader.readLine();
+            } catch (IOException e) {
+                System.err.println("Invalid input");
+                System.exit(1);
+                return;
+            }
+        }
+
+        if (line == null) {
+            System.out.println("Invalid input");
+            return;
+        }
+
+        String[] tokens = Arrays.stream(line.trim().split("\\s+"))
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+
+        if (tokens.length != 5) {
+            System.out.println("Invalid input");
+            return;
+        }
+
+        try {
+            List<Card> cards = parseInput(String.join(" ", tokens));
             HandResult result = evaluator.evaluate(cards);
             System.out.println(result.getHandRank().getDisplayName());
-        } catch (IOException | IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             System.err.println("Invalid input");
             System.exit(1);
         }
