@@ -203,6 +203,91 @@ mvn -q test
 "9C 9D 9H 9S 2D" | mvn -q -DskipTests exec:java -Dexec.mainClass="PokerHandApp"
 ```
 
+## Windows で exe ファイルを作る手順
+
+Launch4j を使って本プロジェクトを Windows ネイティブ実行形式（`.exe`）に変換する手順です。既存の Maven ビルド成果物（JAR）をラッパーで包む形になるため、アプリ本体のコード変更は不要です。
+
+### 前提条件
+
+以下のソフトウェアを Windows マシンにインストールし、環境変数から利用できるようにしておきます。
+
+- **Java 17 JDK**: `java -version` で 17 系が表示されること。
+- **Git**: プロジェクトの取得に使用します。
+- **Apache Maven 3.x**: JAR をビルドするために使用します。
+- **Launch4j**: JAR を exe にラップするツール。公式配布の zip を任意のフォルダ（例: `C:\tools\launch4j`）へ展開します。
+
+### プロジェクト取得とビルド
+
+PowerShell を管理者権限なしで開き、作業ディレクトリを用意してからリポジトリを取得・ビルドします。
+
+```powershell
+# 任意の作業ディレクトリへ移動
+Set-Location $env:USERPROFILE\source
+
+# リポジトリを取得（必要に応じて URL を変更）
+git clone https://github.com/OWNER/poker.git
+Set-Location .\poker
+
+# 依存関係を解決し、JAR を生成
+mvn -q clean package
+```
+
+ビルドに成功すると `target\poker-hand-app-1.0-SNAPSHOT.jar` が生成されます。以降の Launch4j 設定ではこのパスを参照します。
+
+### Launch4j 設定ファイルの作成
+
+Launch4j は GUI でも CLI でも設定可能ですが、自動化しやすい XML 設定ファイルを作るのがおすすめです。例として `launch4j-config.xml` をプロジェクト直下に作成します。
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<launch4jConfig>
+  <dontWrapJar>false</dontWrapJar>
+  <headerType>gui</headerType>
+  <outfile>${PROJECT_DIR}\dist\PokerHandApp.exe</outfile>
+  <jar>${PROJECT_DIR}\target\poker-hand-app-1.0-SNAPSHOT.jar</jar>
+  <errTitle>Poker Hand App</errTitle>
+  <cmdLine></cmdLine>
+  <chdir>.</chdir>
+  <priority>normal</priority>
+  <downloadUrl>https://adoptium.net/</downloadUrl>
+  <supportUrl>https://github.com/OWNER/poker</supportUrl>
+  <stayAlive>false</stayAlive>
+  <manifest></manifest>
+  <icon></icon>
+  <jre>
+    <path></path>
+    <minVersion>17</minVersion>
+    <maxVersion></maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+    <runtimeBits>64/32</runtimeBits>
+    <bundledJrePath></bundledJrePath>
+  </jre>
+</launch4jConfig>
+```
+
+- `${PROJECT_DIR}` はプロジェクトの絶対パス（例: `C:\Users\you\source\poker`）に読み替えてください。
+- `<headerType>` を `gui` にすることでコンソールを開かずに実行できます（必要なら `console` に変更してください）。
+- `<runtimeBits>` を `64/32` にすると 64bit/32bit どちらの JRE でも起動する exe が作成されます。
+- `<icon>` に `.ico` ファイルのパスを指定するとアプリ固有のアイコンを付与できます。
+
+### Launch4j で exe を生成
+
+作成した設定ファイルを Launch4j の CLI で処理します。以下では Launch4j を `C:\tools\launch4j` に展開した想定です。
+
+```powershell
+# Launch4j ディレクトリへ移動
+Set-Location C:\tools\launch4j
+
+# 設定ファイルを指定して exe を生成
+.\launch4jc.exe C:\Users\you\source\poker\launch4j-config.xml
+```
+
+`BUILD SUCCESSFUL` と表示され、設定した `dist\PokerHandApp.exe` が生成されれば成功です。`dist` フォルダが存在しない場合は事前に `New-Item -ItemType Directory dist` などで作成しておきます。
+
+### exe の起動
+
+生成された `PokerHandApp.exe` をダブルクリックすると、JAR と同じポーカー役判定アプリが起動します（コンソール版として実行する設定の場合はターミナルが開きます）。配布時は同じディレクトリに必要な設定ファイルや README を同梱してください。
+
 ## ライセンス / 著者
 - ライセンス情報が設定されている場合はリポジトリ直下の `LICENSE` ファイルを参照してください。未設定の場合はプロジェクト方針に合わせて追加してください。
 - 著者・メンテナはリポジトリ管理者が適宜記載してください。
